@@ -8,6 +8,7 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <!-- JSZip -->
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "d605bd797851455e84de0796e906730e"}'></script><!-- End Cloudflare Web Analytics -->
     <style>
         /* 自定义滚动条样式 */
         .custom-scrollbar::-webkit-scrollbar {
@@ -61,7 +62,6 @@ PWA 注册逻辑： 在 &lt;head&gt; 或 &lt;body&gt; 底部加入常规的 Serv
 请不要将 manifest.json 和 sw.js 分别输出，而是将它们的内容作为数据块直接嵌入在 HTML 的 &lt;/body&gt; 标签之前。
 请严格使用以下 &lt;script&gt; 标签格式包裹它们，以确保页面不报错且不显示：
 
-xml
 &lt;!-- 嵌入 Manifest 文件 --&gt;
 &lt;script type="text/file" data-filename="manifest.json"&gt;
 {
