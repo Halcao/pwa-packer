@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <!-- 禁止缩放核心设置 -->
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+    
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    
+    <title>WebToApp</title>
+    
+    <link rel="apple-touch-icon" id="apple-icon" href="data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==">
+    <link rel="manifest" id="manifest-link" href="data:application/manifest+json,{}">
+
+    <style>
+        :root {
+            --bg-color: #0f172a;
+            --card-bg: #1e293b;
+            --text-main: #ffffff;
+            --text-muted: #9ca3af;
+            --accent-blue: #2563eb;
+            --accent-green: #16a34a;
+            --accent-purple: #9333ea;
+            --accent-purple-hover: #7e22ce;
+            --border-color: #4b5563;
+        }
+
+        * { box-sizing: border-box; }
+
+        body, html { 
+            width: 100%; 
+            height: 100%; 
+            margin: 0; 
+            padding: 0; 
+            overflow: hidden; 
+            background: #000000; 
+            color: var(--text-main); 
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            -webkit-tap-highlight-color: transparent;
+            /* 进一步防止触摸手势缩放 */
+            touch-action: manipulation; 
+            -webkit-text-size-adjust: 100%;
+        }
+
+        /* 布局容器 */
+        #setup-container {
+            position: relative;
+            z-index: 20;
+            background: var(--bg-color);
+            width: 100%;
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 1rem;
+            overflow-y: auto;
+            /* Safe Area */
+            padding-top: max(1rem, env(safe-area-inset-top));
+            padding-bottom: max(1rem, env(safe-area-inset-bottom));
+            padding-left: max(1rem, env(safe-area-inset-left));
+            padding-right: max(1rem, env(safe-area-inset-right));
+        }
+
+        .content-wrapper {
+            width: 100%;
+            max-width: 28rem; /* max-w-md */
+            margin: auto 0;
+        }
+
+        /* 标题 */
+        h1 {
+            font-size: 1.5rem;
+            font-weight: 700;
+            text-align: center;
+            margin-bottom: 1.5rem;
+            color: #60a5fa; /* light blue */
+        }
+
+        /* 卡片样式 */
+        .step-card { 
+            background: var(--card-bg); 
+            border-radius: 1rem; 
+            padding: 1.5rem; 
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); 
+            margin-bottom: 1.25rem; 
+            transition: opacity 0.3s; 
+        }
+
+        .step-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            margin-bottom: 0.75rem;
+            display: flex;
+            align-items: center;
+            margin-top: 0;
+        }
+
+        .badge {
+            font-size: 0.75rem;
+            padding: 0.25rem 0.5rem;
+            border-radius: 0.25rem;
+            margin-right: 0.5rem;
+            color: white;
+            line-height: 1;
+        }
+        .bg-blue { background-color: var(--accent-blue); }
+        .bg-green { background-color: var(--accent-green); }
+        .bg-purple { background-color: var(--accent-purple); }
+
+        .desc-text {
+            color: var(--text-muted);
+            font-size: 0.875rem;
+            margin-bottom: 1rem;
+            margin-top: 0;
+            line-height: 1.5;
+        }
+
+        /* 隐藏工具类 */
+        .hidden { display: none !important; }
+
+        /* Step 1: 图标上传 */
+        .upload-row {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        #icon-preview {
+            width: 4rem;
+            height: 4rem;
+            background-color: #374151;
+            border-radius: 0.75rem;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            border: 2px dashed var(--border-color);
+            flex-shrink: 0;
+        }
+        #icon-preview span { font-size: 0.75rem; color: #6b7280; }
+        #icon-preview img { width: 100%; height: 100%; object-fit: cover; }
+
+        /* 自定义文件上传按钮样式 */
+        input[type="file"] {
+            font-size: 0.875rem;
+            color: var(--text-muted);
+        }
+        input[type="file"]::file-selector-button {
+            margin-right: 1rem;
+            padding: 0.5rem 1rem;
+            border-radius: 9999px;
+            border: 0;
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: white;
+            background-color: var(--accent-blue);
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        #html-file-upload::file-selector-button {
+            background-color: var(--accent-purple);
+        }
+        input[type="file"]::file-selector-button:hover { opacity: 0.9; }
+
+        /* Step 2: 列表 */
+        .install-list {
+            list-style-type: disc;
+            list-style-position: inside;
+            font-size: 0.875rem;
+            color: #d1d5db;
+            padding-left: 0.5rem;
+            margin: 0;
+        }
+        .install-list li { margin-bottom: 0.5rem; }
+        
+        /* 删除了 icon-share 样式 */
+
+        /* Step 3: 分隔线 */
+        .divider {
+            position: relative;
+            margin: 1rem 0;
+            text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .divider::before {
+            content: "";
+            position: absolute;
+            left: 0; right: 0;
+            top: 50%;
+            height: 1px;
+            background-color: var(--border-color);
+            z-index: 0;
+        }
+        .divider span {
+            position: relative;
+            z-index: 1;
+            background-color: var(--card-bg);
+            padding: 0 0.5rem;
+            font-size: 0.875rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+        }
+
+        /* 文本区域 */
+        textarea {
+            width: 100%;
+            background-color: #111827;
+            border: 1px solid var(--border-color);
+            border-radius: 0.5rem;
+            padding: 0.75rem;
+            color: #d1d5db;
+            font-family: monospace;
+            font-size: 0.875rem;
+            outline: none;
+            resize: vertical;
+            display: block;
+            margin-bottom: 1rem;
+        }
+        textarea:focus {
+            border-color: var(--accent-purple);
+            box-shadow: 0 0 0 2px rgba(147, 51, 234, 0.2);
+        }
+
+        /* 按钮 */
+        .btn-primary {
+            width: 100%;
+            background-color: var(--accent-purple);
+            color: white;
+            font-weight: 700;
+            padding: 0.75rem 1rem;
+            border-radius: 0.5rem;
+            border: none;
+            cursor: pointer;
+            transition: background-color 0.2s;
+            font-size: 1rem;
+        }
+        .btn-primary:hover {
+            background-color: var(--accent-purple-hover);
+        }
+        .btn-disabled {
+            cursor: not-allowed;
+            background-color: var(--border-color) !important;
+            color: #d1d5db;
+        }
+
+        .warning-text {
+            color: #f87171;
+            font-size: 0.75rem;
+            text-align: center;
+            margin-top: 0.5rem;
+        }
+
+        /* 禁用状态 */
+        .step-disabled {
+            opacity: 0.5;
+            pointer-events: none;
+            filter: grayscale(1);
+        }
+
+        /* Iframe */
+        #app-frame { 
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100dvh; 
+            border: none; 
+            display: none; 
+            background: #000; 
+            z-index: 10;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 引导界面容器 -->
+    <div id="setup-container">
+        <div class="content-wrapper">
+            <h1>PWA HTML Loader</h1>
+
+            <!-- Step 1: 配置图标 -->
+            <div id="step-icon" class="step-card">
+                <h2 class="step-title">
+                    <span class="badge bg-blue">Step 1</span> 设置图标
+                </h2>
+                <p class="desc-text">上传一张图片，它将成为你安装后的 App 图标。</p>
+                
+                <div class="upload-row">
+                    <div id="icon-preview">
+                        <span>Preview</span>
+                    </div>
+                    <input type="file" id="icon-upload" accept="image/*" />
+                </div>
+            </div>
+
+            <!-- Step 2: 安装引导 -->
+            <div id="step-install" class="step-card">
+                <h2 class="step-title">
+                    <span class="badge bg-green">Step 2</span> 安装 App
+                </h2>
+                <p class="desc-text">图标已准备就绪。现在请将此页面添加到主屏幕。</p>
+                <ul class="install-list">
+                    <!-- 已移除 SVG 分享图标 -->
+                    <li><strong>iOS (Safari):</strong> 点击分享按钮 -> "添加到主屏幕"。</li>
+                    <li><strong>Android (Chrome):</strong> 点击菜单 -> "安装应用" 或 "添加到主屏幕"。</li>
+                </ul>
+            </div>
+
+            <!-- Step 3: 上传内容 -->
+            <div id="step-content" class="step-card">
+                <h2 class="step-title">
+                    <span class="badge bg-purple">Step 3</span> 加载 HTML
+                </h2>
+                <p id="step-3-desc" class="desc-text">上传 HTML 文件或直接粘贴代码。</p>
+                
+                <div>
+                    <input type="file" id="html-file-upload" accept=".html,.htm,.txt" style="width: 100%; display: block; margin-bottom: 1rem;" />
+                    
+                    <div class="divider">
+                        <span>OR PASTE</span>
+                    </div>
+
+                    <textarea id="html-paste" rows="4" placeholder="<!DOCTYPE html>..."></textarea>
+                    
+                    <button id="save-btn" class="btn-primary">保存并启动 App</button>
+                    <p id="pwa-warning" class="warning-text hidden">请先添加到主屏幕 (Step 2) 并在 App 模式下打开以解锁此功能。</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Iframe 容器 (使用 Blob URL) -->
+    <iframe id="app-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups allow-modals allow-downloads"></iframe>
+
+    <script>
+        const ELEMENTS = {
+            setupContainer: document.getElementById('setup-container'),
+            appFrame: document.getElementById('app-frame'),
+            stepIcon: document.getElementById('step-icon'),
+            stepInstall: document.getElementById('step-install'),
+            stepContent: document.getElementById('step-content'),
+            step3Desc: document.getElementById('step-3-desc'),
+            pwaWarning: document.getElementById('pwa-warning'),
+            iconUpload: document.getElementById('icon-upload'),
+            iconPreview: document.getElementById('icon-preview'),
+            htmlUpload: document.getElementById('html-file-upload'),
+            htmlPaste: document.getElementById('html-paste'),
+            saveBtn: document.getElementById('save-btn'),
+            manifestLink: document.getElementById('manifest-link'),
+            appleIcon: document.getElementById('apple-icon')
+        };
+
+        // 严格的 PWA 检测
+        const isStandalone = window.navigator.standalone === true || window.matchMedia('(display-mode: standalone)').matches;
+
+        function init() {
+            const savedHTML = localStorage.getItem('my_pwa_html');
+            if (savedHTML) {
+                enterAppModeWithBlob(savedHTML);
+                return;
+            }
+
+            // 无内容时的逻辑
+            if (isStandalone) {
+                // --- PWA 模式 ---
+                ELEMENTS.stepIcon.classList.add('hidden');
+                ELEMENTS.stepInstall.classList.add('hidden');
+                
+                ELEMENTS.stepContent.classList.remove('step-disabled');
+                ELEMENTS.htmlUpload.disabled = false;
+                ELEMENTS.htmlPaste.disabled = false;
+                ELEMENTS.saveBtn.disabled = false;
+                ELEMENTS.saveBtn.textContent = "保存并启动 App";
+                
+            } else {
+                // --- 浏览器模式 ---
+                ELEMENTS.stepIcon.classList.remove('hidden');
+                ELEMENTS.stepInstall.classList.remove('hidden'); // 显示安装引导
+                
+                ELEMENTS.stepContent.classList.add('step-disabled');
+                ELEMENTS.htmlUpload.disabled = true;
+                ELEMENTS.htmlPaste.disabled = true;
+                ELEMENTS.saveBtn.disabled = true;
+                ELEMENTS.saveBtn.textContent = "请在 App 模式下操作";
+                ELEMENTS.saveBtn.classList.add('btn-disabled');
+                
+                ELEMENTS.pwaWarning.classList.remove('hidden');
+            }
+
+            if ('serviceWorker' in navigator) {
+                navigator.serviceWorker.register('./sw.js').catch(console.error);
+            }
+        }
+
+        ELEMENTS.iconUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            const base64 = await readFileAsBase64(file);
+            ELEMENTS.iconPreview.innerHTML = `<img src="${base64}">`;
+            
+            const icon192 = await resizeImage(base64, 192);
+            const icon512 = await resizeImage(base64, 512);
+
+            ELEMENTS.appleIcon.href = icon192;
+
+            const manifest = {
+                name: "My Custom App",
+                short_name: "MyApp",
+                start_url: "./index.html",
+                display: "standalone",
+                background_color: "#000000",
+                theme_color: "#000000",
+                orientation: "portrait",
+                icons: [
+                    { src: icon192, sizes: "192x192", type: "image/png" },
+                    { src: icon512, sizes: "512x512", type: "image/png" }
+                ]
+            };
+
+            const manifestBlob = new Blob([JSON.stringify(manifest)], {type: 'application/manifest+json'});
+            ELEMENTS.manifestLink.href = URL.createObjectURL(manifestBlob);
+
+            if (!isStandalone) {
+                setTimeout(() => {
+                    ELEMENTS.stepInstall.scrollIntoView({ behavior: 'smooth', block: 'center' });
+                }, 100);
+            }
+        });
+
+        ELEMENTS.saveBtn.addEventListener('click', () => {
+            const content = ELEMENTS.htmlPaste.value;
+            if (content.trim()) saveAndLaunch(content);
+            else alert("请输入 HTML 内容");
+        });
+
+        ELEMENTS.htmlUpload.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const text = await readFileAsText(file);
+            ELEMENTS.htmlPaste.value = text;
+        });
+
+        function saveAndLaunch(htmlContent) {
+            try {
+                localStorage.setItem('my_pwa_html', htmlContent);
+                location.reload();
+            } catch (e) {
+                alert("保存失败 (LocalStorage 限额)");
+            }
+        }
+
+        function enterAppModeWithBlob(htmlContent) {
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+
+            ELEMENTS.setupContainer.style.display = 'none';
+            ELEMENTS.appFrame.style.display = 'block';
+            ELEMENTS.appFrame.src = url;
+        }
+
+        function readFileAsBase64(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsDataURL(file);
+            });
+        }
+
+        function readFileAsText(file) {
+            return new Promise((resolve) => {
+                const reader = new FileReader();
+                reader.onload = (e) => resolve(e.target.result);
+                reader.readAsText(file);
+            });
+        }
+
+        function resizeImage(base64Str, size) {
+            return new Promise((resolve) => {
+                const img = new Image();
+                img.src = base64Str;
+                img.onload = () => {
+                    const canvas = document.createElement('canvas');
+                    canvas.width = size;
+                    canvas.height = size;
+                    const ctx = canvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, size, size);
+                    resolve(canvas.toDataURL('image/png'));
+                };
+            });
+        }
+
+        init();
+    </script>
+</body>
+</html>
