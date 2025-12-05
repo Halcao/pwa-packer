@@ -79,8 +79,32 @@
             font-size: 1.5rem;
             font-weight: 700;
             text-align: center;
-            margin-bottom: 1.5rem;
+            margin-bottom: 0.5rem; /* 减小间距，让徽标更紧凑 */
             color: #60a5fa; /* light blue */
+        }
+
+        /* 顶部元数据（小红书徽标） */
+        .header-meta {
+            display: flex;
+            justify-content: center;
+            margin-bottom: 2rem; /* 在徽标和 Step 1 之间增加间距 */
+        }
+
+        .xhs-link {
+            display: flex;
+            align-items: center;
+            text-decoration: none;
+            transition: opacity 0.2s;
+        }
+        .xhs-link:hover { opacity: 0.8; }
+
+        .xhs-badge {
+            background-color: #fef2f2; /* Red-50 */
+            color: #ef4444; /* Red-500 */
+            border-radius: 9999px;
+            padding: 0.125rem 0.6rem;
+            font-size: 0.75rem;
+            font-weight: 500;
         }
 
         /* 卡片样式 */
@@ -265,45 +289,6 @@
             filter: grayscale(1);
         }
 
-        /* Footer Styles */
-        .footer {
-            text-align: center;
-            border-top: 1px solid var(--border-color);
-            padding-top: 2rem;
-            margin-top: 3rem;
-        }
-        
-        .footer-content {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            justify-content: center;
-            gap: 0.5rem;
-            font-size: 0.875rem;
-        }
-
-        .footer-link {
-            display: flex;
-            align-items: center;
-            gap: 0.5rem;
-            color: var(--text-muted);
-            text-decoration: none;
-            font-weight: 500;
-            transition: color 0.2s;
-        }
-        
-        .footer-link:hover {
-            color: #ef4444; /* Red-500 */
-        }
-
-        .xhs-badge {
-            background-color: #fef2f2; /* Red-50 */
-            color: #ef4444; /* Red-500 */
-            border-radius: 9999px;
-            padding: 0.125rem 0.5rem;
-            font-size: 0.75rem;
-        }
-
         /* Iframe - 钉死在屏幕上 */
         #app-frame { 
             position: fixed;
@@ -325,7 +310,16 @@
     <!-- 引导界面容器 -->
     <div id="setup-container">
         <div class="content-wrapper">
-            <h1>PWA HTML Loader</h1>
+            <h1>Web to App</h1>
+
+            <!-- 新位置：标题下方的徽标 -->
+            <div class="header-meta">
+                <a href="https://xhslink.com/m/60Qf1i6PapL" target="_blank" class="xhs-link">
+                    <span class="xhs-badge">
+                        小红书 @生活自动挡
+                    </span>
+                </a>
+            </div>
 
             <!-- Step 1: 配置图标 -->
             <div id="step-icon" class="step-card">
@@ -374,17 +368,6 @@
                     <p id="pwa-warning" class="warning-text hidden">请先添加到主屏幕 (Step 2) 并在 App 模式下打开以解锁此功能。</p>
                 </div>
             </div>
-
-            <!-- Footer -->
-            <footer class="footer">
-                <div class="footer-content">
-                    <a href="https://xhslink.com/m/60Qf1i6PapL" target="_blank" class="footer-link">
-                        <span class="xhs-badge">
-                            小红书 @生活自动挡
-                        </span>
-                    </a>
-                </div>
-            </footer>
         </div>
     </div>
 
