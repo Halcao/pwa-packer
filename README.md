@@ -2,7 +2,7 @@
 
 > **Turn your Gemini Canvas prototypes into installable Apps in seconds.**
 >
-> 🚀 **Live Demo:** [点击这里使用工具](https://pwa-packer.vercel.app)
+> 🚀 **Live Demo:** [点击这里使用工具](https://lifeauto.vercel.app)
 
 这是一个纯前端工具，旨在配合 **Google Gemini Canvas** 使用。它可以自动解析 Gemini 生成的 HTML 代码，提取其中“休眠”的 PWA 配置（Manifest & Service Worker），并将其自动注入、激活，最终打包成一个可直接部署的 ZIP 文件。
 
@@ -23,7 +23,7 @@
 
 ### 第二步：使用本工具打包
 1. 复制 Gemini 生成的完整 HTML 代码。
-2. 打开 [Gemini PWA Packer](https://pwa-packer.vercel.app)。
+2. 打开 [Gemini PWA Packer](https://lifeauto.vercel.app)。
 3. 粘贴代码，点击 **"Extract & Download ZIP"**。
 
 ### 第三步：部署
