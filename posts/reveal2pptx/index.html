@@ -366,26 +366,29 @@ const DEFAULT_TEMPLATE = ``;
                             function traverse(node, currentStyle) {
                                 if (node.nodeType === 3) { 
                                     let text = node.nodeValue;
-                                    // 1. 替换 &nbsp;
-                                    text = text.replace(/\u00A0/g, ' ');
-                                    // 3. 去掉零宽空格
-                                    text = text.replace(/\u200B/g, '');
-                                    // 4. trim 开头和结尾
-                                    text = text.trim();
+
                                     if (text && text.length > 0) {
-                                        runs.push({
-                                            text: text,
-                                            options: {
-                                                color: normalizeColor(rgbToHex(currentStyle.color)),
-                                                fontSize: (parseFloat(currentStyle.fontSize) / 720) * PPT_HEIGHT_PTS,
-                                                bold: parseInt(currentStyle.fontWeight) >= 600 || currentStyle.fontWeight === 'bold',
-                                                italic: currentStyle.fontStyle === 'italic',
-                                                underline: currentStyle.textDecoration.includes('underline'),
-                                                highlight: (currentStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' && currentStyle.backgroundColor !== 'transparent') 
-                                                    ? normalizeColor(rgbToHex(currentStyle.backgroundColor)) 
-                                                    : undefined
-                                            }
-                                        });
+                                        // 1. 替换 &nbsp;
+                                        text = text.replace(/\u00A0/g, ' ');
+                                        // 3. 去掉零宽空格
+                                        text = text.replace(/\u200B/g, '');
+                                        // 4. trim 开头和结尾
+                                        // text = text.trim();
+                                        if (text.length > 0) {
+                                            runs.push({
+                                                text: text,
+                                                options: {
+                                                    color: normalizeColor(rgbToHex(currentStyle.color)),
+                                                    fontSize: (parseFloat(currentStyle.fontSize) / 720) * PPT_HEIGHT_PTS,
+                                                    bold: parseInt(currentStyle.fontWeight) >= 600 || currentStyle.fontWeight === 'bold',
+                                                    italic: currentStyle.fontStyle === 'italic',
+                                                    underline: currentStyle.textDecoration.includes('underline'),
+                                                    highlight: (currentStyle.backgroundColor !== 'rgba(0, 0, 0, 0)' && currentStyle.backgroundColor !== 'transparent') 
+                                                        ? normalizeColor(rgbToHex(currentStyle.backgroundColor)) 
+                                                        : undefined
+                                                }
+                                            });
+                                        }
                                     }
                                 } else if (node.nodeType === 1) { 
                                     const style = window.getComputedStyle(node);
