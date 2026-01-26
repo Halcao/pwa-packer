@@ -204,6 +204,7 @@
 
         let isEditMode = false;
         let currentEditingImg = null; // 当前正在点击的 iframe 内的图片元素
+        let debounceTimer = null; // 防抖定时器
 
         // 1. 初始化
         // sourceInput.value = initialHtml;
