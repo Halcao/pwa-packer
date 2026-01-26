@@ -52,6 +52,14 @@
         </div>
 
         <div class="flex items-center gap-2 sm:gap-3">
+            <!-- 状态指示器 (新增) -->
+            <div id="renderStatus" class="hidden sm:flex items-center gap-2 text-xs font-medium text-amber-600 px-3 py-1 bg-amber-50 rounded-full opacity-0 transition-opacity duration-200">
+                <i class="ph ph-arrows-clockwise animate-spin"></i>
+                渲染中...
+            </div>
+
+            <div class="h-6 w-px bg-slate-200 mx-1"></div>
+
             <!-- 编辑开关 -->
             <button id="toggleEditBtn" onclick="toggleEditMode()" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-brand-600">
                 <i class="ph ph-pencil-simple" id="editIcon"></i>
@@ -113,6 +121,77 @@
     </main>
 
     <script>
+        // 初始示例代码，包含一个占位图片
+        const initialHtml = `<!DOCTYPE html>
+<html>
+<head>
+    <style>
+        body { font-family: 'Helvetica', sans-serif; padding: 40px; color: #333; line-height: 1.6; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 2px solid #eee; padding-bottom: 20px; margin-bottom: 20px; }
+        .logo-area { text-align: right; }
+        .logo-placeholder { max-height: 60px; border-radius: 4px; }
+        h1 { color: #2563eb; margin: 0; }
+        .invoice-box { max-width: 800px; margin: auto; border: 1px solid #eee; padding: 30px; }
+        .table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .table th { text-align: left; background: #f8fafc; padding: 10px; border-bottom: 2px solid #eee; }
+        .table td { padding: 10px; border-bottom: 1px solid #eee; }
+        .total { text-align: right; font-weight: bold; font-size: 1.2em; margin-top: 20px; }
+        .note { margin-top: 40px; font-size: 0.9em; color: #666; font-style: italic; background: #fffbeb; padding: 10px; border-radius: 4px; }
+    </style>
+</head>
+<body>
+    <div class="invoice-box">
+        <div class="header">
+            <div>
+                <h1>销售单据 #1024</h1>
+                <p style="margin: 5px 0 0 0; color: #666;">2023-10-27</p>
+            </div>
+            <div class="logo-area">
+                <!-- 这是一个占位图，点击即可替换 -->
+                <img src="https://placehold.co/150x60/2563eb/white?text=LOGO" class="logo-placeholder" alt="Logo">
+            </div>
+        </div>
+
+        <p><strong>客户:</strong> 某某科技有限公司</p>
+
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>项目名称</th>
+                    <th>数量</th>
+                    <th>单价</th>
+                    <th>总价</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>网站设计服务</td>
+                    <td>1</td>
+                    <td>¥5,000.00</td>
+                    <td>¥5,000.00</td>
+                </tr>
+                <tr>
+                    <td>服务器维护</td>
+                    <td>2</td>
+                    <td>¥1,200.00</td>
+                    <td>¥2,400.00</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <div class="total">
+            总计: ¥7,400.00
+        </div>
+
+        <div class="note">
+            操作提示：点击右上角“启用编辑”，然后点击上方的蓝色 LOGO 图片，即可上传你本地的图片进行替换。
+            <br>
+            性能优化：现在您可以放心粘贴长篇代码，编辑器会自动延迟刷新，防止卡顿。
+        </div>
+    </div>
+</body>
+</html>`;
+
         const sourceInput = document.getElementById('sourceInput');
         const previewFrame = document.getElementById('previewFrame');
         const toggleEditBtn = document.getElementById('toggleEditBtn');
@@ -130,22 +209,39 @@
         // sourceInput.value = initialHtml;
         updatePreview();
 
-        // 2. 监听输入，实时更新预览
+        // 2. 监听输入，使用防抖 (Debounce)
         sourceInput.addEventListener('input', () => {
-            if (isEditMode) {
-                updatePreview();
-                enableFrameEditing(); 
-            } else {
-                updatePreview();
-            }
+            // 输入时显示正在处理状态
+            renderStatus.classList.remove('opacity-0');
+            
+            // 清除上一次的定时器
+            if (debounceTimer) clearTimeout(debounceTimer);
+
+            // 设置新的定时器，500ms 后执行更新
+            debounceTimer = setTimeout(() => {
+                if (isEditMode) {
+                    updatePreview();
+                    enableFrameEditing(); 
+                } else {
+                    updatePreview();
+                }
+                // 更新完成后隐藏状态
+                renderStatus.classList.add('opacity-0');
+            }, 1000); // 1000毫秒延迟，可根据需要调整
         });
 
         function updatePreview() {
             const htmlContent = sourceInput.value;
             const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
-            doc.open();
-            doc.write(htmlContent);
-            doc.close();
+            
+            // 使用 try-catch 防止某些极其错误的 HTML 导致崩溃
+            try {
+                doc.open();
+                doc.write(htmlContent);
+                doc.close();
+            } catch (e) {
+                console.error("渲染错误", e);
+            }
         }
 
         // 3. 切换编辑模式功能
@@ -183,7 +279,8 @@
 
         function enableFrameEditing() {
             const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
-            
+            if (!doc.body) return; // 防止空文档报错
+
             // 1. 文字可编辑
             doc.body.contentEditable = 'true';
             doc.body.style.outline = 'none';
