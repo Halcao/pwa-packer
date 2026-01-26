@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>简历打印店</title>
+    <!-- 引入 Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- 引入 Phosphor Icons (图标库) -->
+    <script src="https://unpkg.com/@phosphor-icons/web"></script>
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        brand: {
+                            50: '#eff6ff',
+                            100: '#dbeafe',
+                            500: '#3b82f6',
+                            600: '#2563eb',
+                            700: '#1d4ed8',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* 自定义滚动条样式 */
+        textarea::-webkit-scrollbar { width: 8px; }
+        textarea::-webkit-scrollbar-track { background: #f1f5f9; }
+        textarea::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        textarea::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    </style>
+</head>
+<body class="bg-slate-50 h-screen flex flex-col overflow-hidden text-slate-800 font-sans">
+
+    <!-- 隐藏的文件上传输入框 -->
+    <input type="file" id="imageUploadInput" accept="image/*" class="hidden">
+
+    <!-- 顶部导航栏 -->
+    <header class="bg-white border-b border-slate-200 h-16 flex items-center justify-between px-4 sm:px-6 shadow-sm z-10 flex-shrink-0">
+        <div class="flex items-center gap-3">
+            <div class="bg-brand-50 p-2 rounded-lg text-brand-600">
+                <i class="ph ph-printer text-2xl"></i>
+            </div>
+            <div>
+                <h1 class="font-bold text-lg text-slate-800 tracking-tight">简历打印店</h1>
+                <p class="text-xs text-slate-500 hidden sm:block">编写、编辑文字与图片、导出</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- 编辑开关 -->
+            <button id="toggleEditBtn" onclick="toggleEditMode()" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium transition-colors border border-slate-300 text-slate-600 hover:bg-slate-50 hover:text-brand-600">
+                <i class="ph ph-pencil-simple" id="editIcon"></i>
+                <span id="editText">启用编辑</span>
+            </button>
+            
+            <div class="h-6 w-px bg-slate-200 mx-1"></div>
+
+            <!-- 导出按钮 -->
+            <button onclick="exportHtml()" class="flex items-center gap-2 px-3 py-2 rounded-lg text-sm font-medium text-slate-600 hover:text-brand-600 hover:bg-brand-50 transition-colors">
+                <i class="ph ph-download-simple text-lg"></i>
+                <span class="hidden sm:inline">导出 HTML</span>
+            </button>
+
+            <!-- 打印按钮 -->
+            <button onclick="printIframe()" class="flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium bg-brand-600 text-white hover:bg-brand-700 shadow-sm shadow-brand-500/30 transition-all active:scale-95">
+                <i class="ph ph-printer text-lg"></i>
+                <span>打印预览</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主体内容区域 -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- 左侧：代码编辑区 (较小，30-35% 宽度) -->
+        <div class="w-full md:w-[35%] lg:w-[30%] flex flex-col border-r border-slate-200 bg-white">
+            <div class="px-4 py-2 bg-slate-50 border-b border-slate-200 flex justify-between items-center">
+                <span class="text-xs font-semibold text-slate-500 uppercase tracking-wider">源代码</span>
+                <span class="text-xs text-slate-400">在此粘贴 HTML</span>
+            </div>
+            <textarea 
+                id="sourceInput" 
+                class="flex-1 w-full p-4 font-mono text-sm resize-none focus:outline-none focus:bg-slate-50 transition-colors text-slate-700 leading-relaxed"
+                placeholder="在此输入或粘贴 HTML 代码..."
+                spellcheck="false"
+            ></textarea>
+        </div>
+
+        <!-- 右侧：预览区域 (较大) -->
+        <div class="flex-1 bg-slate-100 flex flex-col relative overflow-hidden">
+            <!-- 状态提示条 -->
+            <div id="statusItem" class="absolute top-4 left-1/2 -translate-x-1/2 bg-white/90 backdrop-blur border border-brand-200 text-brand-700 px-4 py-1.5 rounded-full text-sm font-medium shadow-sm z-20 transition-all duration-300 opacity-0 translate-y-[-10px] pointer-events-none flex items-center gap-2 whitespace-nowrap">
+                <i class="ph ph-magic-wand"></i>
+                <span id="statusText">现在可以修改文字，或点击图片进行替换</span>
+            </div>
+
+            <div class="flex-1 p-4 md:p-8 overflow-auto flex justify-center items-start">
+                <!-- 模拟 A4 纸张效果的容器 -->
+                <div class="relative bg-white shadow-xl shadow-slate-200/60 w-full max-w-[210mm] min-h-[297mm] transition-all duration-300" id="paperContainer">
+                    <iframe 
+                        id="previewFrame" 
+                        class="w-full h-full min-h-[297mm] border-none block" 
+                        sandbox="allow-same-origin allow-scripts allow-modals allow-popups"
+                    ></iframe>
+                </div>
+            </div>
+        </div>
+    </main>
+
+    <script>
+        const sourceInput = document.getElementById('sourceInput');
+        const previewFrame = document.getElementById('previewFrame');
+        const toggleEditBtn = document.getElementById('toggleEditBtn');
+        const statusItem = document.getElementById('statusItem');
+        const statusText = document.getElementById('statusText');
+        const paperContainer = document.getElementById('paperContainer');
+        const editIcon = document.getElementById('editIcon');
+        const editText = document.getElementById('editText');
+        const imageUploadInput = document.getElementById('imageUploadInput');
+
+        let isEditMode = false;
+        let currentEditingImg = null; // 当前正在点击的 iframe 内的图片元素
+
+        // 1. 初始化
+        // sourceInput.value = initialHtml;
+        updatePreview();
+
+        // 2. 监听输入，实时更新预览
+        sourceInput.addEventListener('input', () => {
+            if (isEditMode) {
+                updatePreview();
+                enableFrameEditing(); 
+            } else {
+                updatePreview();
+            }
+        });
+
+        function updatePreview() {
+            const htmlContent = sourceInput.value;
+            const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+            doc.open();
+            doc.write(htmlContent);
+            doc.close();
+        }
+
+        // 3. 切换编辑模式功能
+        function toggleEditMode() {
+            isEditMode = !isEditMode;
+            
+            if (isEditMode) {
+                // UI 变化
+                toggleEditBtn.classList.remove('bg-white', 'border-slate-300', 'text-slate-600');
+                toggleEditBtn.classList.add('bg-brand-50', 'border-brand-200', 'text-brand-600', 'ring-2', 'ring-brand-100');
+                editText.textContent = '完成编辑';
+                editIcon.classList.replace('ph-pencil-simple', 'ph-check');
+                paperContainer.classList.add('ring-4', 'ring-brand-200/50');
+                
+                // 显示提示气泡
+                statusItem.classList.remove('opacity-0', 'translate-y-[-10px]');
+                setTimeout(() => {
+                    statusItem.classList.add('opacity-0', 'translate-y-[-10px]');
+                }, 4000);
+
+                enableFrameEditing();
+            } else {
+                // UI 恢复
+                toggleEditBtn.classList.add('bg-white', 'border-slate-300', 'text-slate-600');
+                toggleEditBtn.classList.remove('bg-brand-50', 'border-brand-200', 'text-brand-600', 'ring-2', 'ring-brand-100');
+                editText.textContent = '启用编辑';
+                editIcon.classList.replace('ph-check', 'ph-pencil-simple');
+                paperContainer.classList.remove('ring-4', 'ring-brand-200/50');
+
+                disableFrameEditing();
+            }
+        }
+
+        // --- 编辑模式核心逻辑 ---
+
+        function enableFrameEditing() {
+            const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+            
+            // 1. 文字可编辑
+            doc.body.contentEditable = 'true';
+            doc.body.style.outline = 'none';
+            
+            // 2. 注入样式：让文字有光标，让图片有 hover 效果
+            const style = doc.createElement('style');
+            style.id = 'editor-styles';
+            style.innerHTML = `
+                body { cursor: text; }
+                /* 鼠标悬停元素提示 */
+                *:hover { outline: 1px dashed #cbd5e1; }
+                *:focus { outline: 2px solid #3b82f6; outline-offset: 2px; }
+                
+                /* 图片特别样式 */
+                img { 
+                    cursor: pointer !important; 
+                    transition: all 0.2s ease;
+                    position: relative;
+                }
+                img:hover { 
+                    outline: 3px solid #3b82f6 !important; 
+                    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+                    opacity: 0.9;
+                }
+            `;
+            doc.head.appendChild(style);
+
+            // 3. 绑定点击事件代理，处理图片点击
+            doc.body.addEventListener('click', handleIframeClick);
+        }
+
+        function disableFrameEditing() {
+            const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+            doc.body.contentEditable = 'false';
+            
+            // 移除样式
+            const style = doc.getElementById('editor-styles');
+            if (style) style.remove();
+
+            // 移除事件监听
+            doc.body.removeEventListener('click', handleIframeClick);
+        }
+
+        // 处理 Iframe 内部点击
+        function handleIframeClick(e) {
+            // 如果点击的是图片
+            if (e.target.tagName === 'IMG') {
+                e.preventDefault(); // 阻止默认行为（防止跳转或选中）
+                e.stopPropagation(); // 防止光标乱跑
+                
+                currentEditingImg = e.target; // 记录当前点击的图片元素
+                imageUploadInput.click(); // 触发外部的文件选择框
+            }
+        }
+
+        // 监听外部文件选择框的变化
+        imageUploadInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file && currentEditingImg) {
+                const reader = new FileReader();
+                
+                // 读取文件并转换为 Base64
+                reader.onload = function(evt) {
+                    // 将 Iframe 内图片的 src 替换为 Base64 数据
+                    currentEditingImg.src = evt.target.result;
+                    
+                    // 可选：如果要调整图片大小，可以在这里设置 style
+                    // currentEditingImg.style.maxWidth = '100%';
+                };
+                
+                reader.readAsDataURL(file);
+            }
+            // 清空 value，允许重复选择同一张图片
+            e.target.value = '';
+        });
+
+
+        // 4. 打印功能
+        function printIframe() {
+            const wasEditing = isEditMode;
+            if (wasEditing) disableFrameEditing();
+
+            const win = previewFrame.contentWindow;
+            win.focus();
+            win.print();
+
+            if (wasEditing) {
+                // 打印结束后，并不自动切回编辑模式，以免状态混乱，
+                // 而是重置 UI 为非编辑状态
+                isEditMode = false;
+                toggleEditBtn.classList.add('bg-white', 'border-slate-300', 'text-slate-600');
+                toggleEditBtn.classList.remove('bg-brand-50', 'border-brand-200', 'text-brand-600', 'ring-2', 'ring-brand-100');
+                editText.textContent = '启用编辑';
+                editIcon.classList.replace('ph-check', 'ph-pencil-simple');
+                paperContainer.classList.remove('ring-4', 'ring-brand-200/50');
+            }
+        }
+
+        // 5. 导出 HTML 功能
+        function exportHtml() {
+            const doc = previewFrame.contentDocument || previewFrame.contentWindow.document;
+            
+            const htmlClone = doc.documentElement.cloneNode(true);
+            const body = htmlClone.querySelector('body');
+            
+            // 清理
+            body.removeAttribute('contenteditable');
+            body.removeAttribute('style');
+            const editorStyle = htmlClone.querySelector('#editor-styles');
+            if (editorStyle) editorStyle.remove();
+
+            const finalHtml = `<!DOCTYPE html>\n` + htmlClone.outerHTML;
+            
+            const blob = new Blob([finalHtml], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'exported_resume.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+</body>
+</html>
